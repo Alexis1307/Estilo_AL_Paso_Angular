@@ -1,0 +1,40 @@
+<div class="login-wrapper">
+  <div class="login-card">
+    <div class="logo-circle">
+      <img src="logo-estilo-al-paso.jpeg" alt="Logo Estilo Al Paso">
+    </div>
+
+    <h2>Estilo Al Paso</h2>
+    <p class="subtitle">Sistema de gestión de envíos</p>
+
+    <div class="form-group">
+      <label>Usuario</label>
+      <input
+        type="text"
+        [(ngModel)]="datos.nombreUser"
+        name="usuario"
+        placeholder="Ingresa tu usuario"
+        (keyup.enter)="onLogin()"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input
+        type="password"
+        [(ngModel)]="datos.passwordUser"
+        name="password"
+        placeholder="••••••••"
+        (keyup.enter)="onLogin()"
+      />
+    </div>
+
+    @if (error) {
+      <div class="error-msg">{{ error }}</div>
+    }
+
+    <button (click)="onLogin()" [disabled]="cargando">
+      {{ cargando ? 'Ingresando...' : 'INGRESAR' }}
+    </button>
+  </div>
+</div>

@@ -1,0 +1,78 @@
+<div class="page-header">
+  <h2>Clientes</h2>
+  <span class="total-badge">{{ totalElementos() }} registros</span>
+</div>
+
+<div class="search-bar">
+  <input
+    type="text"
+    [ngModel]="filtroBusqueda()"
+    (ngModelChange)="filtroBusqueda.set($event)"
+    placeholder="Buscar por usuario TikTok..."
+    (keyup.enter)="buscar()"
+  />
+  <input
+    type="text"
+    [ngModel]="filtroTelefono()"
+    (ngModelChange)="filtroTelefono.set($event)"
+    placeholder="Buscar por teléfono..."
+    (keyup.enter)="buscar()"
+  />
+  <button class="btn-search" (click)="buscar()">Buscar</button>
+
+  @if (filtroBusqueda() || filtroTelefono()) {
+    <button class="btn-clear" (click)="limpiar()">✕ Limpiar</button>
+  }
+</div>
+
+<div class="card">
+  @if (cargando()) {
+    <div class="loader">Consultando clientes...</div>
+  } @else if (lista().length === 0) {
+    <div class="no-data">No se encontraron clientes.</div>
+  } @else {
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Usuario TikTok</th>
+        <th>Teléfono</th>
+        <th>Ubicación</th>
+        <th>Estado</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (c of lista(); track c.id) {
+          <tr (click)="verDetalle(c.id)" class="clickable-row">
+            <td class="tiktok-cell">{{ c.usuarioTikTok }}</td>
+            <td>{{ c.telefono }}</td>
+            <td>{{ ubicacion(c) }}</td>
+            <td>
+              <span class="badge" [ngClass]="badgeClass(c.estado)">
+                {{ c.estado }}
+              </span>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    @if (totalPaginas() > 1) {
+      <div class="pagination">
+        <button (click)="anterior()" [disabled]="paginaActual() === 0">
+          ‹ Anterior
+        </button>
+
+        <span>
+          Página {{ paginaActual() + 1 }} de {{ totalPaginas() }}
+        </span>
+
+        <button
+          (click)="siguiente()"
+          [disabled]="paginaActual() >= totalPaginas() - 1"
+        >
+          Siguiente ›
+        </button>
+      </div>
+    }
+  }
+</div>

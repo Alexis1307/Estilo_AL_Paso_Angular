@@ -1,0 +1,62 @@
+<div class="dashboard-header">
+  <h1>Dashboard</h1>
+  <p class="subtitle">Resumen general del negocio</p>
+</div>
+
+@if (cargando) {
+  <div class="loader">Cargando datos...</div>
+} @else {
+  <div class="cards-grid">
+    @for (card of cards; track card.nombre) {
+      <div class="stat-card" [style.--accent]="card.color">
+        <div class="card-icon">{{ card.icono }}</div>
+        <div class="card-info">
+          <span class="card-label">{{ card.nombre }}</span>
+          <strong class="card-value">{{ card.cantidad }}</strong>
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="sections-grid">
+    <div class="section-card">
+      <div class="section-header">
+        <h3>📦 Paquetes Activos</h3>
+        <button class="btn-ver-mas" (click)="verMasClientes()">Ver más →</button>
+      </div>
+      @if (paquetesActivos.length === 0) {
+        <p class="empty-msg">Sin paquetes activos</p>
+      } @else {
+        <ul class="client-list">
+          @for (item of paquetesActivos; track item.usuarioTikTok) {
+            <li class="client-row">
+              <span class="client-name">{{ item.usuarioTikTok }}</span>
+              <span class="badge" [ngClass]="item.estadoPago === 'PAGADO' ? 'badge-success' : 'badge-warning'">
+                {{ item.estadoPago }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <div class="section-card">
+      <div class="section-header">
+        <h3>⏳ Pendientes de Pago</h3>
+        <button class="btn-ver-mas" (click)="verMasClientes()">Ver más →</button>
+      </div>
+      @if (pendientesPago.length === 0) {
+        <p class="empty-msg">Sin pendientes de pago</p>
+      } @else {
+        <ul class="client-list">
+          @for (item of pendientesPago; track item.usuarioTikTok) {
+            <li class="client-row">
+              <span class="client-name">{{ item.usuarioTikTok }}</span>
+              <span class="deuda-chip">{{ item.valor }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  </div>
+}

@@ -1,0 +1,111 @@
+<div class="page-header">
+  <button class="btn-back" (click)="cancelar()">← Volver</button>
+  <h2>Registrar Cliente</h2>
+</div>
+
+@if (exito) {
+  <div class="success-banner">✅ {{ exito }}</div>
+}
+
+<div class="form-card">
+  @if (error) {
+    <div class="error-banner">{{ error }}</div>
+  }
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Usuario TikTok *</label>
+      <input
+        type="text"
+        [(ngModel)]="datos.usuarioTikTok"
+        placeholder="@usuario"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Teléfono * (9 dígitos)</label>
+      <input
+        type="text"
+        [(ngModel)]="datos.telefono"
+        placeholder="987654321"
+        maxlength="9"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>Nombre Real</label>
+      <input
+        type="text"
+        [(ngModel)]="datos.nombreReal"
+        placeholder="Nombre completo"
+      />
+    </div>
+
+    <div class="form-group">
+      <label>DNI (8 dígitos)</label>
+      <input
+        type="text"
+        [(ngModel)]="datos.dni"
+        placeholder="12345678"
+        maxlength="8"
+      />
+    </div>
+
+    <div class="form-group col-2">
+      <label>Ciudad</label>
+      <input
+        type="text"
+        [(ngModel)]="datos.ciudad"
+        placeholder="Ej: Trujillo, Lima, Piura..."
+        (ngModelChange)="onCiudadChange()"
+      />
+      @if (datos.ciudad) {
+        <p class="ciudad-hint">
+          @if (esTrujillo) {
+            🏠 Ciudad local — se pedirá dirección
+          } @else {
+            📦 Ciudad provincia — se pedirá agencia de envío
+          }
+        </p>
+      }
+    </div>
+
+    @if (esTrujillo) {
+      <div class="form-group col-2">
+        <label>Dirección</label>
+        <input
+          type="text"
+          [(ngModel)]="datos.direccion"
+          placeholder="Av. España 123, Urb. El Golf..."
+        />
+      </div>
+    } @else if (datos.ciudad) {
+      <div class="form-group col-2">
+        <label>Agencia de Envío</label>
+        <input
+          type="text"
+          [(ngModel)]="busquedaAgencia"
+          placeholder="Buscar agencia..."
+          (ngModelChange)="onAgenciaBusquedaChange()"
+        />
+        @if (agencias.length > 0) {
+          <ul class="agencia-dropdown">
+            @for (a of agencias; track a.id) {
+              <li (click)="seleccionarAgencia(a)">{{ a.nombre }}</li>
+            }
+          </ul>
+        }
+        @if (datos.agenciaId) {
+          <p class="agencia-selected">✅ Agencia seleccionada: <strong>{{ busquedaAgencia }}</strong></p>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="form-actions">
+    <button class="btn-cancel" (click)="cancelar()">Cancelar</button>
+    <button class="btn-save" (click)="guardar()" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Registrar Cliente' }}
+    </button>
+  </div>
+</div>

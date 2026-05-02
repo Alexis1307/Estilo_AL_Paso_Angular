@@ -1,162 +1,279 @@
-<div class="page-header">
-  <h2>Registrar Prenda</h2>
-</div>
-
-@if (exito) {
-  <div class="success-banner">
-    ✅ {{ exito }}
-    <button (click)="exito = ''">×</button>
-  </div>
-}
-
-<div class="layout">
-  <div class="left-panel">
-    <div class="card">
-      <h3 class="card-title">1. Buscar Cliente</h3>
-
-      <div class="search-row">
-        <input
-          type="text"
-          [(ngModel)]="busqueda"
-          placeholder="Usuario TikTok..."
-          (ngModelChange)="onBusquedaChange()"
-          (keyup.enter)="buscarClientes()"
-        />
-        <input
-          type="text"
-          [(ngModel)]="busquedaTelefono"
-          placeholder="Teléfono..."
-          (keyup.enter)="buscarClientes()"
-        />
-        <button class="btn-search" (click)="buscarClientes()">Buscar</button>
-        <button class="btn-nuevo-cliente" (click)="irCrearCliente()">+ Nuevo Cliente</button>
-      </div>
-
-      @if (buscando) {
-        <p class="searching-msg">Buscando...</p>
-      }
-
-      @if (resultadosBusqueda.length > 0 && !clienteSeleccionado) {
-        <ul class="resultados-lista">
-          @for (c of resultadosBusqueda; track c.id) {
-            <li (click)="seleccionarCliente(c)">
-              <span class="result-tiktok">{{ c.usuarioTikTok }}</span>
-              <span class="result-tel">{{ c.telefono }}</span>
-            </li>
-          }
-        </ul>
-      }
-
-      @if (clienteSeleccionado) {
-        <div class="cliente-chip">
-          <div class="chip-info">
-            <span class="chip-tiktok">{{ clienteSeleccionado.usuarioTikTok }}</span>
-            <span class="chip-tel">{{ clienteSeleccionado.telefono }}</span>
-          </div>
-          <button class="chip-clear" (click)="limpiarCliente()">×</button>
-        </div>
-      }
+<!-- registrar-prenda.component.html -->
+<div class="dashboard-wrapper">
+  <!-- HEADER -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1>Registrar <span class="gold-text">Paquete</span></h1>
+      <p class="subtitle">Lote de prendas · Asignar a un cliente</p>
     </div>
+  </div>
 
-    <div class="card mt-16">
-      <h3 class="card-title">2. Agregar Prenda</h3>
+  <!-- BANNER DE ÉXITO -->
+  @if (exito) {
+  <div class="success-banner">
+    <span>✅ {{ exito }}</span>
+    <button class="banner-close" (click)="exito = ''">×</button>
+  </div>
+  }
+
+  <!-- CLIENTE SELECCIONADO (si existe) -->
+  @if (clienteSeleccionado) {
+  <div class="cliente-card">
+    <div class="cliente-card-header">
+      <div class="cliente-card-icon">👤</div>
+      <div class="cliente-card-info">
+        <span class="cliente-card-label">Cliente seleccionado</span>
+        <strong class="cliente-card-nombre">{{ clienteSeleccionado.usuarioTikTok }}</strong>
+        <span class="cliente-card-telefono">{{ clienteSeleccionado.telefono }}</span>
+      </div>
+      <div class="cliente-card-actions">
+        <button class="btn-icon" (click)="limpiarCliente()" title="Cambiar cliente">✖</button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- BOTÓN PARA BUSCAR CLIENTE (si no hay cliente seleccionado) -->
+  @if (!clienteSeleccionado) {
+  <div class="cliente-empty-card" (click)="abrirModalCliente()">
+    <div class="cliente-empty-content">
+      <span class="cliente-empty-icon">🔍</span>
+      <div>
+        <h3>Seleccionar cliente</h3>
+        <p>Haz clic aquí para buscar y seleccionar un cliente</p>
+      </div>
+      <span class="cliente-empty-arrow">→</span>
+    </div>
+  </div>
+  }
+
+  <!-- CONTENIDO PRINCIPAL (solo si hay cliente seleccionado) -->
+  @if (clienteSeleccionado) {
+  <div class="main-content">
+    <!-- SECCIÓN FORMULARIO DE PRENDA -->
+    <div class="form-section">
+      <div class="section-header">
+        <h2 class="section-title">📦 Agregar Prenda</h2>
+        <div class="section-header-line"></div>
+      </div>
 
       <div class="form-grid">
-        <div class="form-group col-2">
+        <div class="form-group full-width">
           <label>Descripción *</label>
-          <input type="text" [(ngModel)]="nuevaPrenda.descripcion" placeholder="Ej: Vestido azul..." />
+          <input
+            type="text"
+            [(ngModel)]="nuevaPrenda.descripcion"
+            placeholder="Ej: Camisa blanca, Pantalón negro, Vestido rosa..."
+            class="form-control"
+          />
         </div>
+
         <div class="form-group">
           <label>Precio Total *</label>
-          <div class="input-with-btn">
-            <input type="number" [(ngModel)]="nuevaPrenda.precioTotal" min="0.01" step="0.01" placeholder="0.00" />
+          <input
+            type="number"
+            [(ngModel)]="nuevaPrenda.precioTotal"
+            min="0.01"
+            step="0.01"
+            placeholder="0.00"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="label-with-btn">
+            Precio Pagado
+            <button class="btn-autocomplete" (click)="autocompletarPago()">= Total</button>
+          </label>
+          <input
+            type="number"
+            [(ngModel)]="nuevaPrenda.precioPagado"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group full-width">
+          <label>Estado de la Prenda</label>
+          <div class="estado-buttons">
+            <button
+              class="estado-btn"
+              [class.active]="nuevaPrenda.estado === 'BUEN_ESTADO'"
+              (click)="nuevaPrenda.estado = 'BUEN_ESTADO'">
+              ✅ Buen Estado
+            </button>
+            <button
+              class="estado-btn"
+              [class.active]="nuevaPrenda.estado === 'LAVANDERIA'"
+              (click)="nuevaPrenda.estado = 'LAVANDERIA'">
+              🧺 Lavandería
+            </button>
+            <button
+              class="estado-btn"
+              [class.active]="nuevaPrenda.estado === 'REPARACION'"
+              (click)="nuevaPrenda.estado = 'REPARACION'">
+              🔧 Reparación
+            </button>
           </div>
         </div>
-        <div class="form-group">
-          <label>
-            Precio Pagado
-            <button class="btn-autocomplete" (click)="autocompletarPago()" title="Igual al total">= Total</button>
-          </label>
-          <input type="number" [(ngModel)]="nuevaPrenda.precioPagado" min="0" step="0.01" placeholder="0.00" />
+
+        <div class="form-actions">
+          <button class="btn-gold btn-agregar" (click)="agregarPrenda()">
+            + Agregar Prenda a la lista
+          </button>
         </div>
-        <div class="form-group col-2">
-          <label>Estado de la Prenda</label>
-          <div class="estado-options">
-            <label class="radio-option" [class.selected]="nuevaPrenda.estado === 'BUEN_ESTADO'">
-              <input type="radio" [(ngModel)]="nuevaPrenda.estado" value="BUEN_ESTADO" /> ✅ Buen Estado
-            </label>
-            <label class="radio-option" [class.selected]="nuevaPrenda.estado === 'LAVANDERIA'">
-              <input type="radio" [(ngModel)]="nuevaPrenda.estado" value="LAVANDERIA" /> 🧺 Lavandería
-            </label>
-            <label class="radio-option" [class.selected]="nuevaPrenda.estado === 'REPARACION'">
-              <input type="radio" [(ngModel)]="nuevaPrenda.estado" value="REPARACION" /> 🔧 Reparación
-            </label>
+      </div>
+    </div>
+
+    <!-- SECCIÓN RESUMEN Y LISTA DE PRENDAS -->
+    <div class="resumen-lista-section">
+      <div class="section-header">
+        <h2 class="section-title">📋 Resumen del Paquete</h2>
+        <div class="section-header-line"></div>
+      </div>
+
+      <!-- CARDS DE RESUMEN (4 cards horizontales) -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">👕</div>
+          <div class="stat-info">
+            <span class="stat-label">Prendas</span>
+            <strong class="stat-value">{{ prendasEnMemoria.length }}</strong>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-info">
+            <span class="stat-label">Total</span>
+            <strong class="stat-value gold-text">S/ {{ totalPaquete | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💵</div>
+          <div class="stat-info">
+            <span class="stat-label">Pagado</span>
+            <strong class="stat-value text-success">S/ {{ pagadoPaquete | number:'1.2-2' }}</strong>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-info">
+            <span class="stat-label">Pendiente</span>
+            <strong class="stat-value text-warning">S/ {{ pendientePaquete | number:'1.2-2' }}</strong>
           </div>
         </div>
       </div>
 
-      <button class="btn-agregar" (click)="agregarPrenda()">+ Agregar Prenda a la lista</button>
-    </div>
-  </div>
-
-  <div class="right-panel">
-    <div class="card sticky-summary">
-      <h3 class="card-title">📋 Prendas en lista ({{ prendasEnMemoria.length }})</h3>
-
-      @if (prendasEnMemoria.length === 0) {
-        <p class="empty-list">Aún no hay prendas agregadas.</p>
-      } @else {
-        <ul class="prendas-lista">
-          @for (p of prendasEnMemoria; track $index) {
-            <li class="prenda-item">
-              <div class="prenda-info">
-                <span class="prenda-desc">{{ p.descripcion }}</span>
-                <span class="prenda-estado badge badge-neutral">{{ p.estado }}</span>
-              </div>
-              <div class="prenda-precios">
-                <span>Total: <strong>S/ {{ p.precioTotal | number:'1.2-2' }}</strong></span>
-                <span>Pagado: <strong class="text-success">S/ {{ p.precioPagado | number:'1.2-2' }}</strong></span>
-              </div>
-              <button class="btn-quitar" (click)="quitarPrenda($index)">×</button>
-            </li>
-          }
-        </ul>
-
-        <div class="resumen-paquete">
-          <div class="resumen-row">
-            <span>Cliente</span>
-            <strong>{{ clienteSeleccionado?.usuarioTikTok || '—' }}</strong>
-          </div>
-          <div class="resumen-row">
-            <span>Prendas</span>
-            <strong>{{ prendasEnMemoria.length }}</strong>
-          </div>
-          <div class="resumen-row">
-            <span>Total</span>
-            <strong>S/ {{ totalPaquete | number:'1.2-2' }}</strong>
-          </div>
-          <div class="resumen-row">
-            <span>Pagado</span>
-            <strong class="text-success">S/ {{ pagadoPaquete | number:'1.2-2' }}</strong>
-          </div>
-          <div class="resumen-row">
-            <span>Pendiente</span>
-            <strong class="text-warning">S/ {{ pendientePaquete | number:'1.2-2' }}</strong>
-          </div>
+      <!-- LISTA DE PRENDAS (CON SCROLL) -->
+      <div class="prendas-section">
+        <div class="prendas-header">
+          <h3>Prendas Registradas</h3>
+          <span class="prendas-count">{{ prendasEnMemoria.length }} prenda(s)</span>
         </div>
 
+        @if (prendasEnMemoria.length === 0) {
+        <div class="empty-state">
+          <span class="empty-icon">📭</span>
+          <p>No hay prendas agregadas aún</p>
+          <small>Completa el formulario de arriba para agregar prendas</small>
+        </div>
+        } @else {
+        <div class="prendas-scroll">
+          @for (p of prendasEnMemoria; track $index) {
+          <div class="prenda-card">
+            <div class="prenda-info">
+              <div class="prenda-descripcion">
+                <span class="prenda-numero">#{{ $index + 1 }}</span>
+                <span class="prenda-texto">{{ p.descripcion }}</span>
+              </div>
+              <button class="btn-quitar" (click)="quitarPrenda($index)" title="Eliminar prenda">✖</button>
+            </div>
+            <div class="prenda-detalles">
+                    <span class="status-badge" [class.bg-success]="p.estado === 'BUEN_ESTADO'">
+                      {{ p.estado }}
+                    </span>
+              <div class="prenda-precios">
+                <span>Total: <strong>S/ {{ p.precioTotal | number:'1.2-2' }}</strong></span>
+                <span>Pagado: <strong>S/ {{ p.precioPagado | number:'1.2-2' }}</strong></span>
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+        }
+
         @if (errorGuardar) {
-          <div class="error-banner">{{ errorGuardar }}</div>
+        <div class="error-banner">{{ errorGuardar }}</div>
         }
 
         <button
           class="btn-guardar"
           (click)="guardarPaquete()"
-          [disabled]="guardando || !clienteSeleccionado"
-        >
+          [disabled]="guardando || !clienteSeleccionado || prendasEnMemoria.length === 0">
           {{ guardando ? 'Guardando...' : '💾 Guardar Paquete' }}
         </button>
+      </div>
+    </div>
+  </div>
+  }
+
+</div>
+
+<!-- MODAL PARA BUSCAR CLIENTE -->
+@if (modalClienteAbierto) {
+<div class="modal-overlay" (click)="cerrarModalCliente()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3>🔍 Buscar Cliente</h3>
+      <button class="modal-close" (click)="cerrarModalCliente()">×</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="search-group">
+        <input
+          type="text"
+          [(ngModel)]="busqueda"
+          placeholder="Usuario TikTok"
+          (keyup)="buscarClientes()"
+          class="search-input"
+        />
+        <input
+          type="text"
+          [(ngModel)]="busquedaTelefono"
+          placeholder="Teléfono"
+          (keyup)="buscarClientes()"
+          class="search-input"
+        />
+        <button class="btn-gold" (click)="buscarClientes()">Buscar</button>
+      </div>
+
+      @if (resultadosBusqueda.length > 0) {
+      <div class="resultados-lista">
+        @for (c of resultadosBusqueda; track c.id) {
+        <div class="resultado-item" (click)="seleccionarCliente(c)">
+          <div class="resultado-info">
+            <strong class="resultado-tiktok">{{ c.usuarioTikTok }}</strong>
+            <span class="resultado-telefono">{{ c.telefono }}</span>
+          </div>
+          <button class="btn-seleccionar">Seleccionar</button>
+        </div>
+        }
+      </div>
       }
+
+      @if (resultadosBusqueda.length === 0 && (busqueda || busquedaTelefono)) {
+      <p class="empty-msg">No se encontraron clientes</p>
+      }
+
+      <div class="modal-footer">
+        <button class="btn-outline" (click)="irCrearCliente()">+ Crear nuevo cliente</button>
+        <button class="btn-gold" (click)="cerrarModalCliente()">Cerrar</button>
+      </div>
+
     </div>
   </div>
 </div>
+}

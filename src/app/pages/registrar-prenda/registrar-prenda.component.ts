@@ -1,12 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
+
 import { ClienteService } from '../../core/services/cliente.service';
 import { PrendaService } from '../../core/services/prenda.service';
+
 import { ClienteListaResponse } from '../../core/models/cliente.model';
-import { PrendaItemRequest, EstadoPrenda } from '../../core/models/prenda.model';
+import { PrendaItemRequest } from '../../core/models/prenda.model';
 
 @Component({
   selector: 'app-registrar-prenda',
@@ -15,74 +17,110 @@ import { PrendaItemRequest, EstadoPrenda } from '../../core/models/prenda.model'
   templateUrl: './registrar-prenda.component.html',
   styleUrl: './registrar-prenda.component.css',
 })
-export class RegistrarPrendaComponent {
+export class RegistrarPrendaComponent implements OnDestroy {
+
+  // =========================
+  // CLIENTE
+  // =========================
   busqueda = '';
   busquedaTelefono = '';
   resultadosBusqueda: ClienteListaResponse[] = [];
   buscando = false;
   clienteSeleccionado: ClienteListaResponse | null = null;
 
-  prendasEnMemoria: PrendaItemRequest[] = [];
+  modalClienteAbierto = false;
 
+  // =========================
+  // PRENDAS
+  // =========================
+  prendasEnMemoria: PrendaItemRequest[] = [];
   nuevaPrenda: PrendaItemRequest = this.prendaVacia();
+
+  // =========================
+  // ESTADOS
+  // =========================
   guardando = false;
   exito = '';
   errorGuardar = '';
 
-  private busquedaSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
 
   constructor(
     private clienteService: ClienteService,
     private prendaService: PrendaService,
-    private router: Router,
-  ) {
-    this.busquedaSubject.pipe(debounceTime(300), distinctUntilChanged()).subscribe((query) => {
-      if (query.length >= 2) this.buscarClientes();
-    });
+    private router: Router
+  ) {}
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
-  onBusquedaChange(): void {
-    this.busquedaSubject.next(this.busqueda);
-  }
-
+  // =========================
+  // CLIENTES
+  // =========================
   buscarClientes(): void {
+    const usuario = this.busqueda.trim();
+    const telefono = this.busquedaTelefono.trim();
+
+    if (!usuario && !telefono) {
+      this.resultadosBusqueda = [];
+      return;
+    }
+
     this.buscando = true;
-    this.clienteService.buscar(this.busqueda, this.busquedaTelefono).subscribe({
-      next: (res) => {
-        this.resultadosBusqueda = res.content;
-        this.buscando = false;
-      },
-      error: () => (this.buscando = false),
-    });
+
+    this.clienteService.buscar(usuario, telefono)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.resultadosBusqueda = res.content || [];
+          this.buscando = false;
+        },
+        error: () => {
+          this.resultadosBusqueda = [];
+          this.buscando = false;
+        }
+      });
   }
 
-  seleccionarCliente(c: ClienteListaResponse): void {
-    this.clienteSeleccionado = c;
-    this.resultadosBusqueda = [];
-    this.busqueda = c.usuarioTikTok;
+  abrirModalCliente(): void {
+    this.modalClienteAbierto = true;
+  }
+
+  cerrarModalCliente(): void {
+    this.modalClienteAbierto = false;
+  }
+
+  seleccionarCliente(cliente: ClienteListaResponse): void {
+    this.clienteSeleccionado = cliente;
+    this.cerrarModalCliente();
+    this.prendasEnMemoria = [];
   }
 
   limpiarCliente(): void {
     this.clienteSeleccionado = null;
-    this.busqueda = '';
-    this.busquedaTelefono = '';
     this.prendasEnMemoria = [];
   }
 
-  autocompletarPago(): void {
-    this.nuevaPrenda.precioPagado = this.nuevaPrenda.precioTotal;
+  irCrearCliente(): void {
+    this.router.navigate(['/app/crear-cliente']);
   }
 
+  // =========================
+  // PRENDAS
+  // =========================
   agregarPrenda(): void {
-    if (!this.nuevaPrenda.descripcion || !this.nuevaPrenda.precioTotal) {
-      alert('Completa descripción y precio total');
-      return;
-    }
-    if (this.nuevaPrenda.precioPagado > this.nuevaPrenda.precioTotal) {
-      alert('El precio pagado no puede ser mayor al total');
-      return;
-    }
-    this.prendasEnMemoria.push({ ...this.nuevaPrenda });
+    if (!this.nuevaPrenda.descripcion?.trim()) return;
+    if (this.nuevaPrenda.precioTotal <= 0) return;
+
+    this.prendasEnMemoria.push({
+      descripcion: this.nuevaPrenda.descripcion,
+      precioTotal: this.nuevaPrenda.precioTotal,
+      precioPagado: this.nuevaPrenda.precioPagado,
+      estado: this.nuevaPrenda.estado,
+    });
+
     this.nuevaPrenda = this.prendaVacia();
   }
 
@@ -90,58 +128,78 @@ export class RegistrarPrendaComponent {
     this.prendasEnMemoria.splice(index, 1);
   }
 
+  autocompletarPago(): void {
+    this.nuevaPrenda.precioPagado = this.nuevaPrenda.precioTotal;
+  }
+
+  // =========================
+  // CALCULOS (COMPATIBLE CON HTML)
+  // =========================
   get totalPaquete(): number {
-    return this.prendasEnMemoria.reduce((s, p) => s + p.precioTotal, 0);
+    return this.prendasEnMemoria.reduce((a, b) => a + b.precioTotal, 0);
   }
 
   get pagadoPaquete(): number {
-    return this.prendasEnMemoria.reduce((s, p) => s + p.precioPagado, 0);
+    return this.prendasEnMemoria.reduce((a, b) => a + b.precioPagado, 0);
   }
 
   get pendientePaquete(): number {
     return this.totalPaquete - this.pagadoPaquete;
   }
 
+  // =========================
+  // GUARDAR (SIN SPINNER, CON REFRESH)
+  // =========================
   guardarPaquete(): void {
-    if (!this.clienteSeleccionado) {
-      alert('Selecciona un cliente');
+    if (!this.clienteSeleccionado || this.prendasEnMemoria.length === 0) {
       return;
     }
-    if (this.prendasEnMemoria.length === 0) {
-      alert('Agrega al menos una prenda');
-      return;
-    }
+
+    if (this.guardando) return;
 
     this.guardando = true;
+    this.exito = '';
     this.errorGuardar = '';
 
-    this.prendaService
-      .registrar({
-        clienteId: this.clienteSeleccionado.id,
-        usuarioTikTok: this.clienteSeleccionado.usuarioTikTok,
-        telefono: this.clienteSeleccionado.telefono,
-        prendas: this.prendasEnMemoria,
-      })
-      .subscribe({
-        next: (res) => {
-          this.exito = `Paquete registrado: ${res.cantidadPrendas} prendas — Total S/ ${res.total}`;
-          this.prendasEnMemoria = [];
-          this.clienteSeleccionado = null;
-          this.busqueda = '';
-          this.guardando = false;
-        },
-        error: (err) => {
-          this.errorGuardar = err.error?.error || 'Error al registrar';
-          this.guardando = false;
-        },
-      });
+    this.prendaService.registrar({
+      clienteId: this.clienteSeleccionado.id,
+      usuarioTikTok: this.clienteSeleccionado.usuarioTikTok,
+      telefono: this.clienteSeleccionado.telefono,
+      prendas: this.prendasEnMemoria,
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (res) => {
+
+        this.exito = `Paquete registrado (${res.cantidadPrendas})`;
+
+        this.prendasEnMemoria = [];
+        this.clienteSeleccionado = null;
+
+        this.guardando = false;
+
+        // 🔥 REFRESH CONTROLADO (no inmediato)
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      },
+
+      error: () => {
+        this.errorGuardar = 'Error al registrar el paquete';
+        this.guardando = false;
+      }
+    });
   }
 
-  irCrearCliente(): void {
-    this.router.navigate(['/app/crear-cliente']);
-  }
-
+  // =========================
+  // UTIL
+  // =========================
   private prendaVacia(): PrendaItemRequest {
-    return { descripcion: '', precioTotal: 0, precioPagado: 0, estado: 'BUEN_ESTADO' };
+    return {
+      descripcion: '',
+      precioTotal: 0,
+      precioPagado: 0,
+      estado: 'BUEN_ESTADO',
+    };
   }
 }

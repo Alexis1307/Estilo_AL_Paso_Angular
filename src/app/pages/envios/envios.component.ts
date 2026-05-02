@@ -18,6 +18,7 @@ export class EnviosComponent implements OnInit {
   cargando = true;
 
   claveGenerada = '';
+  mostrarModalExcel = false;
   mostrarModalClave = false;
   generandoClave = false;
 

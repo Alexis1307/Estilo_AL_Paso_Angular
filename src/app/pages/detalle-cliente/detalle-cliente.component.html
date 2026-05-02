@@ -1,340 +1,201 @@
-<div class="back-btn-row">
-  <button class="btn-back" (click)="volver()">← Volver a Clientes</button>
+<div class="detalle-container">
+
+  <!-- HEADER CLIENTE -->
+  <div class="card cliente-card" *ngIf="cliente">
+
+    <div class="cliente-info">
+      <h2>{{ cliente.usuarioTikTok }}</h2>
+
+      <p><strong>Nombre:</strong> {{ cliente.nombreReal }}</p>
+      <p><strong>DNI:</strong> {{ cliente.dni }}</p>
+      <p><strong>Teléfono:</strong> {{ cliente.telefono }}</p>
+
+      <p>
+        <strong>Ubicación:</strong>
+        {{ esTrujillo()
+        ? (cliente.direccion || 'Sin dirección')
+        : (cliente.agencia || 'Sin agencia') }}
+      </p>
+    </div>
+
+    <div class="cliente-actions">
+      <button (click)="abrirModalEditar()">✏️ Actualizar datos</button>
+      <button (click)="volver()">← Volver</button>
+    </div>
+
+  </div>
+
+  <!-- PAQUETE ACTIVO -->
+  <div class="card paquete-card" *ngIf="paqueteActivo">
+
+    <h3>📦 Paquete Activo</h3>
+
+    <div class="kpis">
+      <div><span>Prendas</span><strong>{{ paqueteActivo.cantidadPrendas }}</strong></div>
+      <div><span>Total</span><strong>S/ {{ paqueteActivo.total | number:'1.2-2' }}</strong></div>
+      <div><span>Pagado</span><strong>S/ {{ paqueteActivo.pagado | number:'1.2-2' }}</strong></div>
+      <div><span>Deuda</span><strong>S/ {{ paqueteActivo.pendiente | number:'1.2-2' }}</strong></div>
+    </div>
+
+  </div>
+
+  <!-- PRENDAS -->
+  <div class="card prendas-card">
+
+    <div class="card-header">
+      <h3>👕 Prendas</h3>
+      <button (click)="verHistorialPaquetes()">📦 Historial paquetes</button>
+      <button (click)="verHistorialEnvios()">🚚 Historial envíos</button>
+      <button (click)="crearEnvio()">➕ Crear envío</button>
+    </div>
+
+    <div class="tabla-prendas">
+
+      <div class="fila encabezado">
+        <div>Descripción</div>
+        <div>Pagado</div>
+        <div>Total</div>
+        <div>Estado</div>
+      </div>
+
+      <div class="fila" *ngFor="let p of prendas" (click)="abrirModalPrenda(p)">
+
+        <div>{{ p.descripcion }}</div>
+        <div>S/ {{ p.precioPagado }}</div>
+        <div>S/ {{ p.precioTotal }}</div>
+        <div>{{ p.estado }}</div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ENVÍOS -->
+  <div class="card envios-card">
+
+    <h3>🚚 Envíos</h3>
+
+    <div class="filtros">
+      <button (click)="cambiarFiltroEnvio('TODOS')">Todos</button>
+      <button (click)="cambiarFiltroEnvio('PENDIENTE')">Pendiente</button>
+      <button (click)="cambiarFiltroEnvio('ENVIADO')">Enviado</button>
+      <button (click)="cambiarFiltroEnvio('CANCELADO')">Cancelado</button>
+    </div>
+
+    <div class="lista-envios">
+
+      <div class="envio" *ngFor="let e of envios">
+
+        <div>
+          <strong>#{{ e.envioId }}</strong>
+          <p>{{ e.estadoEnvio }}</p>
+        </div>
+
+        <div>{{ e.fechaCreacion | date:'short' }}</div>
+
+      </div>
+
+      <div *ngIf="envios.length === 0" class="empty">
+        Sin envíos registrados
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- MODAL PRENDA -->
+  <div class="modal" *ngIf="mostrarModalPrenda">
+    <div class="modal-backdrop" (click)="cerrarModalPrenda()"></div>
+
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h3>👕 Detalle de prenda</h3>
+        <button class="close-btn" (click)="cerrarModalPrenda()">✕</button>
+      </div>
+
+      <div class="modal-body" *ngIf="prendaSeleccionada">
+
+        <div class="info-row">
+          <span>Descripción</span>
+          <strong>{{ prendaSeleccionada.descripcion }}</strong>
+        </div>
+
+        <div class="info-row">
+          <span>Estado</span>
+          <span class="badge">{{ prendaSeleccionada.estado }}</span>
+        </div>
+
+        <div class="info-row">
+          <span>Precio pagado</span>
+          <strong class="money">S/ {{ prendaSeleccionada.precioPagado }}</strong>
+        </div>
+
+        <div class="info-row highlight">
+          <span>Precio total</span>
+          <strong class="money">S/ {{ prendaSeleccionada.precioTotal }}</strong>
+        </div>
+
+        <div class="info-row highlight">
+          <span>Diferencia</span>
+          <strong class="money">
+            S/ {{
+            (prendaSeleccionada.precioTotal || 0) -
+            (prendaSeleccionada.precioPagado || 0)
+            }}
+          </strong>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn secondary" (click)="cerrarModalPrenda()">Cerrar</button>
+        <button class="btn" (click)="eliminarPrenda()">Eliminar</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL EDITAR CLIENTE -->
+  <div class="modal" *ngIf="mostrarModalEditarCliente">
+    <div class="modal-backdrop" (click)="cerrarModalEditar()"></div>
+
+    <div class="modal-box" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <h3>✏️ Editar cliente</h3>
+        <button class="close-btn" (click)="cerrarModalEditar()">✕</button>
+      </div>
+
+      <div class="modal-body">
+
+        <label>Nombre real</label>
+        <input [(ngModel)]="clienteEdit.nombreReal" />
+
+        <label>Usuario TikTok</label>
+        <input [(ngModel)]="clienteEdit.usuarioTikTok" />
+
+        <label>DNI</label>
+        <input [(ngModel)]="clienteEdit.dni" />
+
+        <label>Teléfono</label>
+        <input [(ngModel)]="clienteEdit.telefono" />
+
+        <label>Dirección</label>
+        <input [(ngModel)]="clienteEdit.direccion" />
+
+        <label>Ciudad</label>
+        <input [(ngModel)]="clienteEdit.ciudad" />
+
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="cerrarModalEditar()">Cancelar</button>
+        <button (click)="guardarCliente()">Guardar</button>
+      </div>
+
+    </div>
+  </div>
+
 </div>
-
-@if (cargando) {
-  <div class="loader">Cargando cliente...</div>
-} @else if (error) {
-  <div class="error-banner">{{ error }}</div>
-} @else if (cliente) {
-  <div class="page-layout">
-
-    <section class="info-card">
-      <div class="section-title-row">
-        <h2>{{ cliente.usuarioTikTok }}</h2>
-        <button class="btn-edit" (click)="abrirModalEditar()">✏️ Actualizar</button>
-      </div>
-      <div class="info-grid">
-        <div class="info-item">
-          <span class="info-label">Nombre Real</span>
-          <span class="info-value">{{ cliente.nombreReal || '—' }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">DNI</span>
-          <span class="info-value">{{ cliente.dni || '—' }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Teléfono</span>
-          <span class="info-value">{{ cliente.telefono }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">Ciudad</span>
-          <span class="info-value">{{ cliente.ciudad || '—' }}</span>
-        </div>
-        <div class="info-item">
-          <span class="info-label">{{ cliente.ciudad && cliente.ciudad.toLowerCase() === 'trujillo' ? 'Dirección' : 'Agencia' }}</span>
-          <span class="info-value">{{ ubicacion }}</span>
-        </div>
-      </div>
-    </section>
-
-    @if (cliente.paquete) {
-      <section class="paquete-activo-card">
-        <h3 class="section-heading">📦 Paquete Activo</h3>
-        <div class="paquete-stats">
-          <div class="stat-item">
-            <span>Prendas</span>
-            <strong>{{ cliente.paquete.cantidadPrendas }}</strong>
-          </div>
-          <div class="stat-item">
-            <span>Total</span>
-            <strong>S/ {{ cliente.paquete.total | number:'1.2-2' }}</strong>
-          </div>
-          <div class="stat-item">
-            <span>Pagado</span>
-            <strong class="text-success">S/ {{ cliente.paquete.pagado | number:'1.2-2' }}</strong>
-          </div>
-          <div class="stat-item">
-            <span>Pendiente</span>
-            <strong class="text-warning">S/ {{ cliente.paquete.pendiente | number:'1.2-2' }}</strong>
-          </div>
-        </div>
-
-        @if (cliente.paquete.prendas.length > 0) {
-          <table class="table mt-16">
-            <thead>
-            <tr>
-              <th>Descripción</th>
-              <th>Total</th>
-              <th>Pagado</th>
-              <th>Estado</th>
-            </tr>
-            </thead>
-            <tbody>
-              @for (p of cliente.paquete.prendas; track p.descripcion) {
-                <tr
-                  [class.clickable-row]="p.id"
-                  (click)="p.id && abrirModalPrenda(p)"
-                >
-                  <td>{{ p.descripcion }}</td>
-                  <td>S/ {{ p.precioTotal | number:'1.2-2' }}</td>
-                  <td>S/ {{ p.precioPagado | number:'1.2-2' }}</td>
-                  <td><span class="badge badge-neutral">{{ p.estado }}</span></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </section>
-    } @else {
-      <section class="empty-paquete">
-        <p>Sin paquete activo</p>
-      </section>
-    }
-
-    <section class="card">
-      <div class="section-title-row">
-        <h3 class="section-heading">📋 Historial de Paquetes</h3>
-      </div>
-      @if (cargandoPaquetes) {
-        <div class="loader-sm">Cargando...</div>
-      } @else if (paquetes.length === 0) {
-        <p class="empty-msg">Sin historial</p>
-      } @else {
-        <div class="paquetes-grid">
-          @for (p of paquetes; track p.paqueteId) {
-            <div class="paquete-card" (click)="abrirModalPaquete(p.paqueteId)">
-              <div class="paquete-card-header">
-                <span class="badge" [ngClass]="p.estado === 'ACTIVO' ? 'badge-success' : 'badge-neutral'">
-                  {{ p.estado }}
-                </span>
-                <span class="prendas-count">{{ p.cantidadPrendas }} prendas</span>
-              </div>
-              <div class="paquete-card-body">
-                <span>Total: <strong>S/ {{ p.total | number:'1.2-2' }}</strong></span>
-                <span>Pagado: <strong class="text-success">S/ {{ p.pagado | number:'1.2-2' }}</strong></span>
-              </div>
-            </div>
-          }
-        </div>
-      }
-    </section>
-
-    <section class="card">
-      <div class="section-title-row">
-        <h3 class="section-heading">🚚 Historial de Envíos</h3>
-        <div class="envio-actions">
-          <div class="filtro-tabs">
-            <button [class.active]="filtroEstadoEnvio === ''" (click)="cambiarFiltroEnvio('')">Todos</button>
-            <button [class.active]="filtroEstadoEnvio === 'PENDIENTE'" (click)="cambiarFiltroEnvio('PENDIENTE')">Pendiente</button>
-            <button [class.active]="filtroEstadoEnvio === 'ENVIADO'" (click)="cambiarFiltroEnvio('ENVIADO')">Enviado</button>
-            <button [class.active]="filtroEstadoEnvio === 'CANCELADO'" (click)="cambiarFiltroEnvio('CANCELADO')">Cancelado</button>
-          </div>
-          <button class="btn-create-envio" (click)="crearEnvio()" [disabled]="creandoEnvio">
-            {{ creandoEnvio ? 'Creando...' : '+ Crear Envío' }}
-          </button>
-        </div>
-      </div>
-
-      @if (cargandoEnvios) {
-        <div class="loader-sm">Cargando...</div>
-      } @else if (envios.length === 0) {
-        <p class="empty-msg">Sin envíos {{ filtroEstadoEnvio.toLowerCase() }}s</p>
-      } @else {
-        <table class="table mt-16">
-          <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tipo</th>
-            <th>Prendas</th>
-            <th>Total</th>
-            <th>Estado</th>
-            <th>Clave</th>
-          </tr>
-          </thead>
-          <tbody>
-            @for (e of envios; track e.envioId) {
-              <tr>
-                <td>#{{ e.envioId }}</td>
-                <td><span class="badge badge-blue">{{ e.tipoEnvio }}</span></td>
-                <td>{{ e.cantidadPrendas }}</td>
-                <td>S/ {{ e.total | number:'1.2-2' }}</td>
-                <td>
-                  <span class="badge"
-                        [ngClass]="{
-                      'badge-warning': e.estadoEnvio === 'PENDIENTE',
-                      'badge-success': e.estadoEnvio === 'ENVIADO',
-                      'badge-danger': e.estadoEnvio === 'CANCELADO'
-                    }">{{ e.estadoEnvio }}</span>
-                </td>
-                <td>
-                  @if (e.clave) {
-                    <span class="clave-chip">{{ e.clave }}</span>
-                  } @else {
-                    <span class="no-clave">—</span>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      }
-    </section>
-
-  </div>
-}
-
-@if (mostrarModalEditar) {
-  <div class="modal-overlay" (click)="mostrarModalEditar = false">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Actualizar Cliente</h3>
-        <button class="close-btn" (click)="mostrarModalEditar = false">×</button>
-      </div>
-      <div class="modal-body form-grid">
-        <div class="form-group">
-          <label>Usuario TikTok</label>
-          <input type="text" [(ngModel)]="editData.usuarioTikTok" />
-        </div>
-        <div class="form-group">
-          <label>Nombre Real</label>
-          <input type="text" [(ngModel)]="editData.nombreReal" />
-        </div>
-        <div class="form-group">
-          <label>DNI</label>
-          <input type="text" [(ngModel)]="editData.dni" maxlength="8" />
-        </div>
-        <div class="form-group">
-          <label>Teléfono</label>
-          <input type="text" [(ngModel)]="editData.telefono" maxlength="9" />
-        </div>
-        <div class="form-group">
-          <label>Ciudad</label>
-          <input type="text" [(ngModel)]="editData.ciudad" />
-        </div>
-        @if (esTrujilloEdit) {
-          <div class="form-group">
-            <label>Dirección</label>
-            <input type="text" [(ngModel)]="editData.direccion" />
-          </div>
-        } @else {
-          <div class="form-group">
-            <label>Agencia</label>
-            <select [(ngModel)]="editData.agenciaId">
-              <option [ngValue]="null">Selecciona agencia</option>
-              @for (a of agencias; track a.id) {
-                <option [value]="a.id">{{ a.nombre }}</option>
-              }
-            </select>
-          </div>
-        }
-      </div>
-      @if (errorEdit) {
-        <div class="error-banner modal-error">{{ errorEdit }}</div>
-      }
-      <div class="modal-actions">
-        <button class="btn-cancel" (click)="mostrarModalEditar = false">Cancelar</button>
-        <button class="btn-confirm" (click)="guardarEdicion()" [disabled]="guardandoEdit">
-          {{ guardandoEdit ? 'Guardando...' : 'Guardar' }}
-        </button>
-      </div>
-    </div>
-  </div>
-}
-
-@if (mostrarModalPrenda) {
-  <div class="modal-overlay" (click)="mostrarModalPrenda = false">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Editar Prenda</h3>
-        <button class="close-btn" (click)="mostrarModalPrenda = false">×</button>
-      </div>
-      @if (cargandoPrenda) {
-        <div class="modal-body"><div class="loader-sm">Cargando...</div></div>
-      } @else {
-        <div class="modal-body form-grid">
-          <div class="form-group" style="grid-column: 1/-1">
-            <label>Descripción</label>
-            <input type="text" [(ngModel)]="editPrenda.descripcion" />
-          </div>
-          <div class="form-group">
-            <label>Precio Total</label>
-            <input type="number" [(ngModel)]="editPrenda.precioTotal" min="0.01" step="0.01" />
-          </div>
-          <div class="form-group">
-            <label>Precio Pagado</label>
-            <input type="number" [(ngModel)]="editPrenda.precioPagado" min="0" step="0.01" />
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select [(ngModel)]="editPrenda.estado">
-              <option value="BUEN_ESTADO">BUEN_ESTADO</option>
-              <option value="LAVANDERIA">LAVANDERIA</option>
-              <option value="REPARACION">REPARACION</option>
-            </select>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn-danger" (click)="eliminarPrenda()">🗑️ Eliminar</button>
-          <div class="modal-right-actions">
-            <button class="btn-cancel" (click)="mostrarModalPrenda = false">Cancelar</button>
-            <button class="btn-confirm" (click)="guardarPrenda()" [disabled]="guardandoPrenda">
-              {{ guardandoPrenda ? 'Guardando...' : 'Guardar' }}
-            </button>
-          </div>
-        </div>
-      }
-    </div>
-  </div>
-}
-
-@if (mostrarModalPaquete) {
-  <div class="modal-overlay" (click)="mostrarModalPaquete = false">
-    <div class="modal-content modal-lg" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>Detalle del Paquete</h3>
-        <button class="close-btn" (click)="mostrarModalPaquete = false">×</button>
-      </div>
-      @if (cargandoPaqueteDetalle) {
-        <div class="modal-body"><div class="loader-sm">Cargando...</div></div>
-      } @else if (paqueteDetalle) {
-        <div class="modal-body">
-          <div class="paquete-stats mb-16">
-            <div class="stat-item">
-              <span>Prendas</span><strong>{{ paqueteDetalle.cantidadPrendas }}</strong>
-            </div>
-            <div class="stat-item">
-              <span>Total</span><strong>S/ {{ paqueteDetalle.total | number:'1.2-2' }}</strong>
-            </div>
-            <div class="stat-item">
-              <span>Pagado</span><strong class="text-success">S/ {{ paqueteDetalle.pagado | number:'1.2-2' }}</strong>
-            </div>
-          </div>
-          <table class="table">
-            <thead>
-            <tr>
-              <th>Descripción</th>
-              <th>Total</th>
-              <th>Pagado</th>
-              <th>Estado</th>
-            </tr>
-            </thead>
-            <tbody>
-              @for (p of paqueteDetalle.prendas; track p.descripcion) {
-                <tr>
-                  <td>{{ p.descripcion }}</td>
-                  <td>S/ {{ p.precioTotal | number:'1.2-2' }}</td>
-                  <td>S/ {{ p.precioPagado | number:'1.2-2' }}</td>
-                  <td><span class="badge badge-neutral">{{ p.estado }}</span></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-      <div class="modal-actions">
-        <button class="btn-confirm" (click)="mostrarModalPaquete = false">Cerrar</button>
-      </div>
-    </div>
-  </div>
-}

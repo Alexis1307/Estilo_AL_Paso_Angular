@@ -1,46 +1,67 @@
 <nav class="navbar">
+  <!-- LOGO Y MARCA -->
   <div class="navbar-brand">
     <a routerLink="/app/dashboard" class="brand-link">
       <div class="navbar-logo-circle">
-        <img src="logo-estilo-al-paso.jpeg" alt="Logo">
+        <img src="logo_estilo.png" alt="Estilo Logo">
       </div>
-      <span class="brand-name">Estilo Al Paso</span>
+      <span class="brand-name">Estilo <span class="gold-text">Al Paso</span></span>
     </a>
   </div>
 
+  <!-- ENLACES OPERATIVOS (Accesos Rápidos) -->
   <div class="navbar-links">
-    <a routerLink="/app/registrar-prenda" routerLinkActive="active" class="nav-link">
-      📦 Registrar Prenda
+    <a routerLink="/app/dashboard" class="dropdown-item" (click)="menuAbierto = false">
+      <span class="dp-icon">📊</span> Dashboard
     </a>
-    <a routerLink="/app/crear-cliente" routerLinkActive="active" class="nav-link">
-      👤 Registrar Cliente
+    <a routerLink="/app/registrar-prenda" routerLinkActive="active" class="nav-link">
+      <span class="nav-icon">📦</span> Registrar Lote
+    </a>
+    <a routerLink="/app/clientes" routerLinkActive="active" class="nav-link">
+      <span class="nav-icon">👥</span> Gestión Clientes
     </a>
     <a routerLink="/app/envios" routerLinkActive="active" class="nav-link">
-      🚚 Envíos
+      <span class="nav-icon">🚚</span> Envíos
     </a>
   </div>
 
+  <!-- SECCIÓN DERECHA: USUARIO Y MENÚ -->
   <div class="navbar-right">
+    <div class="user-info-desktop">
+      <span class="user-role">{{ rol }}</span>
+      <span class="user-name">{{ usuario }}</span>
+    </div>
+
     <div class="hamburger-wrapper">
-      <button class="hamburger-btn" (click)="toggleMenu()">
-        <span class="hamburger-icon">☰</span>
-        <span class="user-name">{{ usuario }}</span>
+      <button class="hamburger-btn" (click)="toggleMenu()" [class.active]="menuAbierto">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
       </button>
 
-      <div class="dropdown-menu" *ngIf="menuAbierto">
-        <a routerLink="/app/dashboard" class="dropdown-item" (click)="menuAbierto = false">
-          📊 Dashboard
+      <!-- DROPDOWN MENU -->
+      @if (menuAbierto) {
+      <div class="dropdown-menu">
+        <div class="dropdown-header">
+          <p class="dp-name">{{ usuario }}</p>
+          <p class="dp-rol">{{ rol }}</p>
+        </div>
+
+        <div class="dropdown-divider"></div>
+        <a routerLink="/app/crear-cliente" class="dropdown-item" (click)="menuAbierto = false">
+          <span class="dp-icon">👤</span> Nuevo Cliente
         </a>
         <a routerLink="/app/clientes" class="dropdown-item" (click)="menuAbierto = false">
-          👥 Clientes
+          <span class="dp-icon">📋</span> Lista General
         </a>
+
         <div class="dropdown-divider"></div>
-        <div class="dropdown-user">
-          <span class="dropdown-username">{{ usuario }}</span>
-          <span class="dropdown-rol">{{ rol }}</span>
-        </div>
-        <button class="dropdown-logout" (click)="logout()">🚪 Cerrar Sesión</button>
+
+        <button class="dropdown-logout" (click)="logout()">
+          <span class="dp-icon">🚪</span> Cerrar Sesión
+        </button>
       </div>
+      }
     </div>
   </div>
 </nav>

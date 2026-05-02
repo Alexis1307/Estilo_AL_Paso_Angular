@@ -1,7 +1,7 @@
 export type EstadoPrenda = 'BUEN_ESTADO' | 'LAVANDERIA' | 'REPARACION';
 
 export interface PrendaResponse {
-  id?: number;
+  prendaId: number;
   descripcion: string;
   precioPagado: number;
   precioTotal: number;

@@ -1,62 +1,165 @@
-<div class="dashboard-header">
-  <h1>Dashboard</h1>
-  <p class="subtitle">Resumen general del negocio</p>
-</div>
+<div class="dashboard-wrapper">
 
-@if (cargando) {
-  <div class="loader">Cargando datos...</div>
-} @else {
+  <!-- CABECERA -->
+  <header class="dashboard-header">
+    <div class="header-content">
+      <h1>Panel de Control</h1>
+      <p class="subtitle">
+        Gestión Logística Post-Venta |
+        <span class="gold-text">Estilo Al Paso</span>
+      </p>
+    </div>
+  </header>
+
+  <!-- LOADING -->
+  @if (cargando) {
+  <div class="loader-container">
+    <div class="spinner"></div>
+    <p>Sincronizando con el servidor...</p>
+  </div>
+  } @else {
+
+  <!-- CARDS PRINCIPALES -->
   <div class="cards-grid">
     @for (card of cards; track card.nombre) {
-      <div class="stat-card" [style.--accent]="card.color">
-        <div class="card-icon">{{ card.icono }}</div>
-        <div class="card-info">
-          <span class="card-label">{{ card.nombre }}</span>
-          <strong class="card-value">{{ card.cantidad }}</strong>
-        </div>
+    <div class="stat-card">
+      <div class="card-icon-wrapper" [style.background-color]="card.color + '15'">
+          <span class="icon" [style.color]="card.color">
+            {{ card.icono }}
+          </span>
       </div>
+
+      <div class="card-info">
+        <span class="card-label">{{ card.nombre }}</span>
+        <strong class="card-value">{{ card.cantidad }}</strong>
+      </div>
+
+      <div class="card-border-gold"></div>
+    </div>
     }
   </div>
 
+  <!-- SECCIONES (3 COLUMNAS EN DESKTOP) -->
   <div class="sections-grid">
-    <div class="section-card">
-      <div class="section-header">
-        <h3>📦 Paquetes Activos</h3>
-        <button class="btn-ver-mas" (click)="verMasClientes()">Ver más →</button>
+
+    <!-- PAQUETES ACTIVOS -->
+    <div class="content-card">
+      <div class="card-header">
+        <h3><span class="icon-gold">📦</span> Paquetes Activos</h3>
+        <button class="btn-outline" (click)="verMasClientes()">Ver Todo</button>
       </div>
-      @if (paquetesActivos.length === 0) {
-        <p class="empty-msg">Sin paquetes activos</p>
-      } @else {
-        <ul class="client-list">
-          @for (item of paquetesActivos; track item.usuarioTikTok) {
-            <li class="client-row">
-              <span class="client-name">{{ item.usuarioTikTok }}</span>
-              <span class="badge" [ngClass]="item.estadoPago === 'PAGADO' ? 'badge-success' : 'badge-warning'">
-                {{ item.estadoPago }}
-              </span>
-            </li>
+
+      <div class="table-scroll">
+        @if (paquetesActivos.length > 0) {
+        <table class="custom-table">
+          <thead>
+          <tr>
+            <th>Usuario TikTok</th>
+            <th>Prendas</th>
+            <th>Estado Pago</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          @for (item of paquetesActivos; track item.usuarioTiktok) {
+          <tr>
+            <td class="user-cell">@{{ item.usuarioTiktok }}</td>
+            <td>{{ item.cantidadPrendas }} und.</td>
+            <td>
+                    <span class="status-badge"
+                          [ngClass]="item.estadoPago === 'PAGADO' ? 'bg-success' : 'bg-danger'">
+                      {{ item.estadoPago }}
+                    </span>
+            </td>
+          </tr>
           }
-        </ul>
-      }
+          </tbody>
+        </table>
+        } @else {
+        <p class="empty-msg">No hay paquetes activos registrados.</p>
+        }
+      </div>
     </div>
 
-    <div class="section-card">
-      <div class="section-header">
-        <h3>⏳ Pendientes de Pago</h3>
-        <button class="btn-ver-mas" (click)="verMasClientes()">Ver más →</button>
+    <!-- CLIENTES CON DEUDA -->
+    <div class="content-card">
+      <div class="card-header">
+        <h3><span class="icon-gold">⏳</span> Clientes con Deuda</h3>
+        <button class="btn-outline" (click)="verMasClientes()">Cobrar</button>
       </div>
-      @if (pendientesPago.length === 0) {
-        <p class="empty-msg">Sin pendientes de pago</p>
-      } @else {
-        <ul class="client-list">
-          @for (item of pendientesPago; track item.usuarioTikTok) {
-            <li class="client-row">
-              <span class="client-name">{{ item.usuarioTikTok }}</span>
-              <span class="deuda-chip">{{ item.valor }}</span>
-            </li>
+
+      <div class="table-scroll">
+        @if (pendientesPago.length > 0) {
+        <table class="custom-table">
+          <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Deuda Total</th>
+            <th>Acción</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          @for (item of pendientesPago; track item.usuarioTiktok) {
+          <tr>
+            <td class="user-cell">@{{ item.usuarioTiktok }}</td>
+            <td class="text-danger">
+              S/ {{ item.deudaTotal | number:'1.2-2' }}
+            </td>
+            <td>
+              <button class="btn-table-action">
+                Perfil
+              </button>
+            </td>
+          </tr>
           }
-        </ul>
-      }
+          </tbody>
+        </table>
+        } @else {
+        <p class="empty-msg">No hay deudas pendientes hoy.</p>
+        }
+      </div>
     </div>
+
+    <!-- MANTENIMIENTO (TERCERA COLUMNA NORMAL) -->
+    <div class="content-card">
+      <div class="card-header">
+        <h3><span class="icon-gold">🛠️</span> Mantenimiento</h3>
+      </div>
+
+      <div class="table-scroll">
+        @if (prendasMantenimiento.length > 0) {
+        <table class="custom-table">
+          <thead>
+          <tr>
+            <th>Usuario TikTok</th>
+            <th>Prendas</th>
+            <th>Estado</th>
+          </tr>
+          </thead>
+
+          <tbody>
+          @for (item of prendasMantenimiento; track item.usuarioTiktok) {
+          <tr>
+            <td class="user-cell">@{{ item.usuarioTiktok }}</td>
+            <td class="text-gold">
+              {{ item.prendasMantenimiento }} und.
+            </td>
+            <td>
+                    <span class="badge-repair">
+                      En proceso
+                    </span>
+            </td>
+          </tr>
+          }
+          </tbody>
+        </table>
+        } @else {
+        <p class="empty-msg">Sin prendas en mantenimiento.</p>
+        }
+      </div>
+    </div>
+
   </div>
-}
+  }
+</div>

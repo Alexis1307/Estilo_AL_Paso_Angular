@@ -1,117 +1,192 @@
-<div class="page-header">
-  <h2>Envíos</h2>
-  @if (tabActiva === 'encomienda') {
-    <button class="btn-clave" (click)="generarClave()" [disabled]="generandoClave">
-      🔑 {{ generandoClave ? 'Generando...' : 'Generar Clave Lote' }}
-    </button>
-  }
-</div>
+<div class="envios-module">
 
-<div class="tabs">
-  <button [class.active]="tabActiva === 'delivery'" (click)="tabActiva = 'delivery'">
-    🚗 Delivery <span class="tab-count">{{ delivery.length }}</span>
-  </button>
-  <button [class.active]="tabActiva === 'encomienda'" (click)="tabActiva = 'encomienda'">
-    📦 Encomienda <span class="tab-count">{{ encomienda.length }}</span>
-  </button>
-</div>
-
-@if (tabActiva === 'encomienda') {
-  <div class="excel-bar">
-    <select [(ngModel)]="origenExcel">
-      <option [ngValue]="null">Seleccionar agencia origen...</option>
-      @for (o of ORIGENES; track o.id) {
-        <option [value]="o.id">{{ o.nombre }}</option>
-      }
-    </select>
-    <button class="btn-excel" (click)="exportarExcel()" [disabled]="exportando || !origenExcel">
-      📥 {{ exportando ? 'Exportando...' : 'Exportar Excel' }}
-    </button>
+  <!-- HEADER GENERAL -->
+  <div class="module-header">
+    <h1>Gestión de Envíos</h1>
   </div>
-}
 
-@if (cargando) {
-  <div class="loader">Cargando envíos...</div>
-} @else if (listaActiva.length === 0) {
-  <div class="no-data">No hay envíos en esta sección.</div>
-} @else {
-  <div class="cards-grid">
-    @for (e of listaActiva; track e.envioId) {
-      <div class="envio-card" [ngClass]="'card-' + e.estadoEnvio.toLowerCase()">
-        <div class="card-header">
-          <div class="card-user">
-            <span class="tiktok">{{ e.usuarioTikTok }}</span>
-            @if (e.nombreReal) {
-              <span class="nombre-real">{{ e.nombreReal }}</span>
-            }
-          </div>
-          <div class="card-badges">
-            <span class="badge" [ngClass]="{
-              'badge-warning': e.estadoEnvio === 'PENDIENTE',
-              'badge-success': e.estadoEnvio === 'ENVIADO',
-              'badge-danger': e.estadoEnvio === 'CANCELADO'
-            }">{{ e.estadoEnvio }}</span>
-            <span class="badge" [ngClass]="{
-              'badge-success': e.estadoCliente === 'PAGADO',
-              'badge-warning': e.estadoCliente === 'PENDIENTE',
-              'badge-neutral': e.estadoCliente === 'SIN_PRENDAS'
-            }">{{ e.estadoCliente }}</span>
-          </div>
-        </div>
+  <!-- ================= DELIVERY ================= -->
+  <section class="section-delivery">
+
+    <div class="section-header">
+      <h2>Delivery</h2>
+      <span>{{ delivery.length }} registros</span>
+    </div>
+
+    <div class="cards-grid">
+
+      <div class="envio-card" *ngFor="let e of delivery">
 
         <div class="card-body">
-          <div class="card-row">
-            <span class="label">📞 Teléfono</span>
-            <span class="value">{{ e.telefono }}</span>
+
+          <div class="row">
+            <strong>{{ e.usuarioTikTok }}</strong>
+            <span>{{ e.telefono }}</span>
           </div>
-          <div class="card-row">
-            <span class="label">📍 Destino</span>
-            <span class="value">{{ ubicacionEnvio(e) }}</span>
+
+          <div class="row">
+            <span>{{ e.direccion || 'Sin dirección' }}</span>
           </div>
-          <div class="card-row">
-            <span class="label">📦 Prendas</span>
-            <span class="value">{{ e.cantidadPrendas }}</span>
+
+          <div class="row">
+            <span>Prendas: {{ e.cantidadPrendas }}</span>
           </div>
-          @if (tabActiva === 'encomienda' && e.clave) {
-            <div class="card-row">
-              <span class="label">🔑 Clave</span>
-              <span class="clave-chip">{{ e.clave }}</span>
-            </div>
-          }
+
+          <div class="row">
+            <span>Estado Cliente:</span>
+            <span>{{ e.estadoCliente }}</span>
+          </div>
+
         </div>
 
-        @if (e.estadoEnvio === 'PENDIENTE') {
-          <div class="card-actions">
-            <button class="btn-cancelar" (click)="cancelar(e.envioId)">✕ Cancelar</button>
-            <button
-              class="btn-enviar"
-              (click)="enviar(e.envioId)"
-              [disabled]="!puedeEnviar(e)"
-              [title]="!puedeEnviar(e) ? 'El cliente debe estar PAGADO para enviar' : ''"
-            >
-              ✓ Enviar
-            </button>
-          </div>
-        }
-      </div>
-    }
-  </div>
-}
+        <div class="card-actions">
 
-@if (mostrarModalClave) {
-  <div class="modal-overlay" (click)="mostrarModalClave = false">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>🔑 Clave Generada</h3>
-        <button class="close-btn" (click)="mostrarModalClave = false">×</button>
+          <button
+            (click)="cancelar(e.envioId)"
+            [disabled]="e.estadoEnvio !== 'PENDIENTE'">
+            Cancelar
+          </button>
+
+          <button
+            (click)="enviar(e.envioId)"
+            [disabled]="e.estadoCliente !== 'PAGADO' || e.estadoEnvio !== 'PENDIENTE'">
+            Enviado
+          </button>
+
+        </div>
+
       </div>
-      <div class="modal-body">
-        <p class="clave-desc">Clave asignada a todas las encomiendas pendientes:</p>
-        <div class="clave-big">{{ claveGenerada }}</div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-ok" (click)="mostrarModalClave = false">Entendido</button>
-      </div>
+
     </div>
+
+  </section>
+
+  <!-- ================= ENCOMIENDA ================= -->
+  <section class="section-encomienda">
+
+    <div class="section-header">
+      <h2>Encomienda</h2>
+
+      <div class="actions-header">
+
+        <button (click)="generarClave()">
+          Generar Clave
+        </button>
+
+        <button (click)="mostrarModalExcel = true">
+          Exportar Excel
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="cards-grid">
+
+      <div class="envio-card" *ngFor="let e of encomienda">
+
+        <div class="card-body">
+
+          <div class="row">
+            <strong>{{ e.usuarioTikTok }}</strong>
+            <span>{{ e.nombreReal }}</span>
+          </div>
+
+          <div class="row">
+            <span>{{ e.telefono }}</span>
+          </div>
+
+          <div class="row">
+            <span>{{ e.ciudad }}</span>
+          </div>
+
+          <div class="row">
+            <span>{{ e.agencia?.nombre || 'Sin agencia' }}</span>
+          </div>
+
+          <div class="row">
+            <span>Prendas: {{ e.cantidadPrendas }}</span>
+          </div>
+
+          <div class="row estado">
+            <span [class.pendiente]="e.estadoCliente === 'PENDIENTE'"
+                  [class.pagado]="e.estadoCliente === 'PAGADO'">
+              {{ e.estadoCliente }}
+            </span>
+          </div>
+
+          <div class="row">
+            <span>Clave: {{ e.clave || '—' }}</span>
+          </div>
+
+        </div>
+
+        <div class="card-actions">
+
+          <button
+            (click)="cancelar(e.envioId)"
+            [disabled]="e.estadoEnvio !== 'PENDIENTE'">
+            Cancelar
+          </button>
+
+          <button
+            (click)="enviar(e.envioId)"
+            [disabled]="e.estadoCliente !== 'PAGADO' || e.estadoEnvio !== 'PENDIENTE'">
+            Enviado
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <!-- ================= MODAL EXCEL ================= -->
+  <div class="modal" *ngIf="mostrarModalExcel">
+
+    <div class="modal-content">
+
+      <h3>Exportar Excel</h3>
+
+      <select [(ngModel)]="origenExcel">
+        <option [ngValue]="null">Selecciona origen</option>
+        <option [ngValue]="196">ALTO TRUJILLO</option>
+        <option [ngValue]="381">JR. CAHUIDE</option>
+      </select>
+
+      <div class="modal-actions">
+
+        <button (click)="mostrarModalExcel = false">
+          Cancelar
+        </button>
+
+        <button (click)="exportarExcel()">
+          Generar Excel
+        </button>
+
+      </div>
+
+    </div>
+
   </div>
-}
+
+  <!-- ================= MODAL CLAVE ================= -->
+  <div class="modal" *ngIf="mostrarModalClave">
+
+    <div class="modal-content">
+
+      <h3>Clave Generada</h3>
+
+      <p>{{ claveGenerada }}</p>
+
+      <button (click)="mostrarModalClave = false">
+        Cerrar
+      </button>
+
+    </div>
+
+  </div>
+
+</div>

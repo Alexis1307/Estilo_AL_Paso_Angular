@@ -32,34 +32,33 @@ export class ClientesComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.initAutoCarga();
+    this.cargarClientes();
   }
 
-  initAutoCarga() {
-    effect(() => {
-      this.cargando.set(true);
+  cargarClientes(): void {
+    this.cargando.set(true);
 
-      this.clienteService
-        .listar(
-          this.filtroBusqueda(),
-          this.filtroTelefono(),
-          this.paginaActual(),
-          this.pageSize
-        )
-        .subscribe({
-          next: (res) => {
-            this.lista.set(res.content);
-            this.totalPaginas.set(res.totalPages);
-            this.totalElementos.set(res.totalElements);
-            this.cargando.set(false);
-          },
-          error: () => this.cargando.set(false),
-        });
-    });
+    this.clienteService
+      .listar(
+        this.filtroBusqueda(),
+        this.filtroTelefono(),
+        this.paginaActual(),
+        this.pageSize
+      )
+      .subscribe({
+        next: (res) => {
+          this.lista.set(res.content);
+          this.totalPaginas.set(res.totalPages);
+          this.totalElementos.set(res.totalElements);
+          this.cargando.set(false);
+        },
+        error: () => this.cargando.set(false),
+      });
   }
 
   buscar(): void {
     this.paginaActual.set(0);
+    this.cargarClientes();
   }
 
   limpiar(): void {
@@ -71,12 +70,14 @@ export class ClientesComponent implements OnInit {
   anterior(): void {
     if (this.paginaActual() > 0) {
       this.paginaActual.update(v => v - 1);
+      this.cargarClientes();
     }
   }
 
   siguiente(): void {
     if (this.paginaActual() < this.totalPaginas() - 1) {
       this.paginaActual.update(v => v + 1);
+      this.cargarClientes();
     }
   }
 

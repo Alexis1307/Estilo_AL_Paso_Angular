@@ -5,7 +5,7 @@
     </div>
 
     <h2>Estilo Al Paso</h2>
-    <p class="subtitle">Sistema de gestión de envíos</p>
+    <p class="subtitle">Sistema de gestión de Compras</p>
 
     <div class="form-group">
       <label>Usuario</label>
@@ -30,8 +30,14 @@
     </div>
 
     @if (error) {
-      <div class="error-msg">{{ error }}</div>
+    <div class="error-msg">{{ error }}</div>
     }
+
+    <div class="demo-credentials">
+      <p>🔑 <strong>Credenciales de prueba:</strong></p>
+      <div class="cred-row"><span>Usuario:</span> <code>AlxisJara</code></div>
+      <div class="cred-row"><span>Contraseña:</span> <code>Alexis1307</code></div>
+    </div>
 
     <button (click)="onLogin()" [disabled]="cargando">
       {{ cargando ? 'Ingresando...' : 'INGRESAR' }}
